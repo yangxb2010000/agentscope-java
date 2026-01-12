@@ -60,7 +60,7 @@ public class AguiAgentAdapter {
     /**
      * Creates a new AguiAgentAdapter.
      *
-     * @param agent The agent to adapt
+     * @param agent  The agent to adapt
      * @param config The adapter configuration
      */
     public AguiAgentAdapter(Agent agent, AguiAdapterConfig config) {
@@ -198,20 +198,63 @@ public class AguiAgentAdapter {
             for (ContentBlock block : msg.getContent()) {
                 if (block instanceof ToolResultBlock toolResult) {
                     String toolCallId = toolResult.getId();
-                    String result = extractToolResultText(toolResult);
 
-                    // Ensure ToolCallEnd is emitted to close arguments phase
-                    events.add(new AguiEvent.ToolCallEnd(state.threadId, state.runId, toolCallId));
+                    // subagent as tools
+                    if (toolResult.getName().startsWith("call_")) {
+                        if (toolResult.getOutput() != null) {
+                            for (ContentBlock output : toolResult.getOutput()) {
+                                if (output instanceof TextBlock textBlock) {
+                                    String text = textBlock.getText();
+                                    Event innerEvent = null;
+                                    try {
+                                        innerEvent =
+                                                JsonUtils.getJsonCodec()
+                                                        .fromJson(text, Event.class);
+                                    } catch (Exception ex) {
 
-                    events.add(
-                            new AguiEvent.ToolCallResult(
-                                    state.threadId,
-                                    state.runId,
-                                    toolCallId,
-                                    result,
-                                    "tool",
-                                    msg.getId()));
-                    state.endToolCall(toolCallId);
+                                    }
+                                    if (innerEvent != null) {
+                                        if (innerEvent.getType() == EventType.AGENT_RESULT) {
+                                            events.add(
+                                                    new AguiEvent.ToolCallEnd(
+                                                            state.threadId,
+                                                            state.runId,
+                                                            toolCallId));
+                                            events.add(
+                                                    new AguiEvent.ToolCallResult(
+                                                            state.threadId,
+                                                            state.runId,
+                                                            toolCallId,
+                                                            innerEvent
+                                                                    .getMessage()
+                                                                    .getTextContent(),
+                                                            "tool",
+                                                            msg.getId()));
+                                            state.endToolCall(toolCallId);
+                                        } else {
+                                            events.addAll(convertEvent(innerEvent, state));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        String result = extractToolResultText(toolResult);
+
+                        // Ensure ToolCallEnd is emitted to close arguments phase
+                        events.add(
+                                new AguiEvent.ToolCallEnd(state.threadId, state.runId, toolCallId));
+
+                        events.add(
+                                new AguiEvent.ToolCallResult(
+                                        state.threadId,
+                                        state.runId,
+                                        toolCallId,
+                                        result,
+                                        "tool",
+                                        msg.getId()));
+                        state.endToolCall(toolCallId);
+                    }
                 }
             }
         }

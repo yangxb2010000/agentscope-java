@@ -15,6 +15,8 @@
  */
 package io.agentscope.core.agent;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.agentscope.core.message.Msg;
 
 /**
@@ -55,7 +57,11 @@ public class Event {
      * @param message The message content
      * @param isLast Whether this is the last/complete message for this event
      */
-    public Event(EventType type, Msg message, boolean isLast) {
+    @JsonCreator
+    public Event(
+            @JsonProperty("type") EventType type,
+            @JsonProperty("message") Msg message,
+            @JsonProperty("last") boolean isLast) {
         this.type = type;
         this.message = message;
         this.isLast = isLast;

@@ -181,6 +181,7 @@ class AguiAgentAdapterTest {
                                         .id("tc-1")
                                         .name("get_weather")
                                         .input(Map.of("city", "Beijing"))
+                                        .content("{\"city\": \"Beijing\"}")
                                         .build())
                         .build();
 
@@ -235,6 +236,7 @@ class AguiAgentAdapterTest {
                                         .id("tc-1")
                                         .name("calculator")
                                         .input(Map.of("expr", "2+2"))
+                                        .content("{\"expr\":\"2+2\"}")
                                         .build())
                         .build();
 
@@ -246,6 +248,7 @@ class AguiAgentAdapterTest {
                         .content(
                                 ToolResultBlock.builder()
                                         .id("tc-1")
+                                        .name("calculator")
                                         .output(TextBlock.builder().text("4").build())
                                         .build())
                         .build();
